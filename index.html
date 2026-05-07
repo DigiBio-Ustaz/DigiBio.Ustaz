@@ -1,0 +1,549 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { initializeApp } from 'firebase/app';
+import { 
+  getAuth, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  onAuthStateChanged, 
+  signOut,
+  signInAnonymously,
+  signInWithCustomToken
+} from 'firebase/auth';
+import { 
+  Home, 
+  BookOpen, 
+  Settings, 
+  QrCode, 
+  FileText,
+  Moon,
+  Sun,
+  WifiOff,
+  User,
+  Gamepad2,
+  ExternalLink,
+  ChevronRight,
+  FolderOpen,
+  Library,
+  Languages,
+  MessageSquare,
+  Send,
+  Sparkles,
+  Bot,
+  RefreshCw,
+  LogOut,
+  LogIn
+} from 'lucide-react';
+
+// Firebase Configuration (Provided by environment)
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
+
+const App = () => {
+  const [activeTab, setActiveTab] = useState('home');
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  
+  // AI State
+  const [messages, setMessages] = useState([
+    { role: 'bot', text: 'Сәлеметсіз бе! Мен Ustaz AI көмекшісімін. Биология пәні бойынша қандай сұрағыңыз бар?' }
+  ]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  // Authentication logic with Rule 3 compliance
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          // If no custom token, we wait for user to click login or use anonymous
+          // For this specific request, we want Google Login, so we monitor state
+        }
+      } catch (error) {
+        console.error("Auth error:", error);
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+    initAuth();
+
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleGoogleLogin = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+      console.error("Login failed:", error);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setActiveTab('home');
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // Data
+  const textbooks = [
+    {
+      grade: "7-сынып",
+      books: [
+        { name: "Биология (Аймуханов Н.)", link: "https://okulyk.kz/biologija/1039/", publisher: "okulyk.kz" },
+        { name: "Биология (Соловьева А.)", link: "https://okulyk.kz/biologija/245/", publisher: "okulyk.kz" },
+        { name: "Биология (Очкур А.) 2025", link: "https://okulyk.com/7-klass/biologiya-7/7377/", publisher: "okulyk.com" }
+      ]
+    },
+    {
+      grade: "8-сынып",
+      books: [
+        { name: "Биология (Короткова И.)", link: "https://okulyk.kz/biologija/1069/", publisher: "okulyk.kz" },
+        { name: "Биология (Эрметов А.)", link: "https://okulyk.kz/biologija/325/", publisher: "okulyk.kz" }
+      ]
+    },
+    {
+      grade: "9-сынып",
+      books: [
+        { name: "Биология (Асанов Н.)", link: "https://okulyk.kz/biologija/402/", publisher: "okulyk.kz" },
+        { name: "Биология (Оспанкулова Э.)", link: "https://okulyk.kz/biologija/1085/", publisher: "okulyk.kz" },
+        { name: "Биология (Эрметов Б.) - Қос тілді", link: "https://okulyk.kz/biologija/422/", publisher: "okulyk.kz", isBilingual: true }
+      ]
+    },
+    {
+      grade: "10-сынып",
+      books: [
+        { name: "Биология (Асанов Н.)", link: "https://okulyk.kz/biologija/558/", publisher: "okulyk.kz" },
+        { name: "Биология (Очкур А.) 1-Бөлім", link: "https://okulyk.com/10-klass/biologiya-10/3867/", publisher: "okulyk.com" },
+        { name: "Биология (Очкур А.) 2-Бөлім", link: "https://okulyk.com/10-klass/biologiya-10/3868/", publisher: "okulyk.com" }
+      ]
+    }
+  ];
+
+  const gradeGames = [
+    { 
+      grade: "7-сынып", 
+      categories: [
+        {
+          title: "Өсімдіктер және Жасуша",
+          items: [
+            { name: "Биология 7-сынып (Ойын)", link: "https://wordwall.net/ru/resource/52683273/7-сынып" },
+            { name: "Ботаника әлемі", link: "https://www.educaplay.com/learning-resources/16894463-7.html" },
+            { name: "Өсімдік мүшелері", link: "https://wordwall.net/ru/resource/31737782" }
+          ]
+        }
+      ]
+    },
+    { 
+      grade: "8-сынып", 
+      categories: [
+        {
+          title: "Анатомия және Физиология",
+          items: [
+            { name: "Есту мүшесі (Wordwall)", link: "https://wordwall.net/ru/resource/69120314/есту-мүшесі" },
+            { name: "Тіс құрылысы", link: "https://wordwall.net/ru/resource/99088901/тіс" },
+            { name: "Қан айналым жүйесі", link: "https://wordwall.net/ru/resource/35678234" }
+          ]
+        }
+      ]
+    },
+    { 
+      grade: "9-сынып", 
+      categories: [
+        {
+          title: "Генетика және Жүйелер",
+          items: [
+            { name: "Зәр шығару жүйесі", link: "https://wordwall.net/ru/resource/101689834" },
+            { name: "Митоз және Мейоз", link: "https://wordwall.net/ru/resource/106059535" },
+            { name: "Генетикалық есептер", link: "https://wordwall.net/ru/resource/29837462" }
+          ]
+        }
+      ]
+    },
+    { 
+      grade: "10-сынып", 
+      categories: [
+        {
+          title: "Молекулалық биология",
+          items: [
+            { name: "ДНҚ құрылымы", link: "https://wordwall.net/ru/resource/33456712" },
+            { name: "Биологиялық диктант", link: "https://wordwall.net/ru/resource/33892011" }
+          ]
+        }
+      ]
+    }
+  ];
+
+  const handleSendMessage = async () => {
+    if (!input.trim() || isLoading) return;
+    const userMessage = { role: 'user', text: input };
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+
+    try {
+      const apiKey = ""; 
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: input }] }],
+          systemInstruction: { 
+            parts: [{ text: "Сен 'Ustaz AI' атты көмекшісің. Биология мұғалімдеріне көмектесесің. Қысқа, нақты жауап бер." }] 
+          }
+        })
+      });
+      const data = await response.json();
+      const botResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Қате орын алды.';
+      setMessages(prev => [...prev, { role: 'bot', text: botResponse }]);
+    } catch (error) {
+      setMessages(prev => [...prev, { role: 'bot', text: 'Интернетті тексеріңіз.' }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const renderContent = () => {
+    if (authLoading) return (
+      <div className="h-full flex items-center justify-center">
+        <RefreshCw className="animate-spin text-emerald-500" size={32} />
+      </div>
+    );
+
+    switch (activeTab) {
+      case 'home':
+        return (
+          <div className="p-4 space-y-6 animate-in fade-in duration-500 pb-24">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center space-x-3">
+                {user?.photoURL ? (
+                  <img src={user.photoURL} alt="Avatar" className="w-12 h-12 rounded-full border-2 border-emerald-500" />
+                ) : (
+                  <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
+                    <User size={24} />
+                  </div>
+                )}
+                <div>
+                  <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Қайырлы күн!</h1>
+                  <p className="text-sm text-gray-500 font-medium">
+                    {user ? user.displayName : "Қонақ (Тіркеліңіз)"}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setActiveTab('settings')}
+                className={`p-2 rounded-full shadow-sm transition-all active:scale-90 ${isDarkMode ? 'bg-slate-800 text-gray-300' : 'bg-white text-gray-600'}`}
+              >
+                <Settings size={24} />
+              </button>
+            </div>
+
+            {!user && (
+              <button 
+                onClick={handleGoogleLogin}
+                className="w-full bg-white border border-gray-200 p-4 rounded-2xl shadow-sm flex items-center justify-center space-x-3 active:scale-95 transition-all"
+              >
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
+                <span className="font-bold text-gray-700">Google арқылы кіру</span>
+              </button>
+            )}
+
+            <button 
+              onClick={() => setActiveTab('scanner')}
+              className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 p-10 rounded-3xl shadow-lg flex flex-col items-center justify-center space-y-4 active:scale-95 transition-transform"
+            >
+              <div className="p-4 bg-white/20 rounded-2xl">
+                <QrCode size={56} className="text-white" />
+              </div>
+              <div className="text-center">
+                <span className="text-white font-bold text-2xl block">QR-код Сканер</span>
+                <p className="text-white/80 text-sm mt-1">Оқулық материалдарын ашу</p>
+              </div>
+            </button>
+
+            <div 
+              onClick={() => setActiveTab('ai')}
+              className={`p-6 rounded-[32px] cursor-pointer bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white shadow-xl flex items-center justify-between group active:scale-[0.98] transition-all`}
+            >
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-white/20 rounded-2xl">
+                  <Sparkles size={28} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">Ustaz AI</h3>
+                  <p className="text-white/80 text-xs">Интеллектуалды көмекші</p>
+                </div>
+              </div>
+              <ChevronRight size={24} className="group-hover:translate-x-1 transition-transform" />
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+               <div className={`${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'} p-5 rounded-3xl border shadow-sm flex items-center justify-between`}>
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-indigo-500 text-white rounded-2xl">
+                      <FileText size={24} />
+                    </div>
+                    <div>
+                      <h4 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Ресурс таңдау</h4>
+                      <p className="text-xs text-gray-400">Төменгі мәзірден таңдаңыз</p>
+                    </div>
+                  </div>
+               </div>
+            </div>
+          </div>
+        );
+
+      case 'book':
+        return (
+          <div className="p-4 space-y-8 animate-in slide-in-from-bottom duration-500 pb-24">
+            <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Сандық оқулық</h1>
+            <div className="space-y-8">
+              {textbooks.map((gradeInfo, idx) => (
+                <div key={idx} className="space-y-3">
+                  <div className={`text-[11px] font-black uppercase tracking-tighter px-2 py-1 inline-block rounded ${isDarkMode ? 'bg-slate-800 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>
+                    {gradeInfo.grade}
+                  </div>
+                  <div className="grid grid-cols-1 gap-2">
+                    {gradeInfo.books.map((book, bIdx) => (
+                      <a key={bIdx} href={book.link} target="_blank" rel="noopener noreferrer" className={`${isDarkMode ? 'bg-slate-800 border-slate-700 hover:bg-slate-750' : 'bg-white border-gray-100 hover:bg-gray-50'} p-4 rounded-2xl border shadow-sm flex items-center justify-between group active:scale-[0.98] transition-all`}>
+                        <div className="flex items-center space-x-3">
+                          <div className={`p-2 rounded-xl ${isDarkMode ? 'bg-slate-700' : 'bg-blue-50'} ${book.isBilingual ? 'text-purple-600' : 'text-blue-600'}`}>
+                            {book.isBilingual ? <Languages size={20} /> : <BookOpen size={20} />}
+                          </div>
+                          <div>
+                            <h4 className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{book.name}</h4>
+                          </div>
+                        </div>
+                        <ChevronRight size={16} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-6 border-t border-gray-200">
+               <div className={`text-[11px] font-black uppercase tracking-tighter px-2 py-1 mb-3 inline-block rounded ${isDarkMode ? 'bg-slate-800 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
+                  Қосымша ресурстар
+                </div>
+                <a 
+                  href="https://drive.google.com/drive/folders/1E7SJwXhkClQikRqihFZG2cNElZzicADw?usp=sharing"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100 shadow-emerald-100/50 shadow-md'} p-6 rounded-3xl border flex items-center justify-between group active:scale-95 transition-all`}
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-emerald-500 text-white rounded-2xl shadow-lg shadow-emerald-200">
+                      <FolderOpen size={24} />
+                    </div>
+                    <div>
+                      <h4 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>ҚМЖ жинағы</h4>
+                      <p className="text-xs text-gray-400">Google Drive бұлтында</p>
+                    </div>
+                  </div>
+                  <ExternalLink size={20} className="text-emerald-500" />
+                </a>
+            </div>
+          </div>
+        );
+
+      case 'ai':
+        return (
+          <div className="flex flex-col h-full animate-in slide-in-from-right duration-300 pb-24">
+            <div className={`p-4 border-b flex items-center justify-between ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white">
+                  <Bot size={24} />
+                </div>
+                <h2 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Ustaz AI</h2>
+              </div>
+              <button onClick={() => setMessages([{ role: 'bot', text: 'Сұрағыңыз бар ма?' }])} className="text-gray-400"><RefreshCw size={20}/></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
+              {messages.map((msg, index) => (
+                <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[85%] p-4 rounded-3xl text-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : isDarkMode ? 'bg-slate-800 text-gray-200 border-slate-700 border rounded-bl-none' : 'bg-gray-100 text-gray-800 rounded-bl-none'}`}>
+                    {msg.text}
+                  </div>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+            <div className="p-4">
+              <div className={`flex items-center p-2 rounded-2xl border ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-gray-50 border-gray-200'}`}>
+                <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} placeholder="Жазу..." className="flex-1 bg-transparent px-3 outline-none text-gray-500 text-sm"/>
+                <button onClick={handleSendMessage} className="p-2 bg-indigo-600 text-white rounded-xl"><Send size={18}/></button>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'games':
+        return (
+          <div className="p-4 space-y-6 animate-in slide-in-from-bottom duration-500 pb-24">
+            <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Ойындар</h1>
+            {gradeGames.map((gradeData, gIndex) => (
+              <div key={gIndex} className="space-y-4">
+                <div className="px-4 py-1 bg-emerald-600 text-white rounded-full text-xs font-bold inline-block shadow-md">
+                  {gradeData.grade}
+                </div>
+                {gradeData.categories.map((cat, cIndex) => (
+                  <div key={cIndex} className="space-y-2">
+                    <h3 className="text-[10px] uppercase font-bold text-gray-400 tracking-wider px-1">{cat.title}</h3>
+                    <div className="grid grid-cols-1 gap-2">
+                      {cat.items.map((game, iIndex) => (
+                        <a 
+                          key={iIndex} 
+                          href={game.link} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className={`${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'} p-4 rounded-2xl border shadow-sm flex items-center justify-between group active:scale-95 transition-all`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <div className="p-2 bg-indigo-500/10 text-indigo-500 rounded-xl">
+                              <Gamepad2 size={20} />
+                            </div>
+                            <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                              {game.name}
+                            </span>
+                          </div>
+                          <ExternalLink size={16} className="text-gray-400 group-hover:text-indigo-500 transition-colors" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        );
+
+      case 'settings':
+        return (
+          <div className="p-4 space-y-6 animate-in fade-in">
+            <div className="flex items-center space-x-4">
+              <button onClick={() => setActiveTab('home')} className="p-2 bg-gray-100 rounded-xl"><ChevronRight className="rotate-180" size={20}/></button>
+              <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Баптаулар</h1>
+            </div>
+            <div className={`${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'} p-6 rounded-3xl border shadow-sm space-y-6`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-blue-100 text-blue-600 rounded-xl"><Moon size={20}/></div>
+                  <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>Түнгі режим</span>
+                </div>
+                <div className={`w-12 h-6 rounded-full relative cursor-pointer transition-colors ${isDarkMode ? 'bg-emerald-500' : 'bg-gray-300'}`} onClick={() => setIsDarkMode(!isDarkMode)}>
+                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isDarkMode ? 'right-1' : 'left-1'}`}></div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-orange-100 text-orange-600 rounded-xl"><WifiOff size={20}/></div>
+                  <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>Офлайн режим</span>
+                </div>
+                <div className={`w-12 h-6 rounded-full relative cursor-pointer transition-colors ${isOfflineMode ? 'bg-emerald-500' : 'bg-gray-300'}`} onClick={() => setIsOfflineMode(!isOfflineMode)}>
+                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isOfflineMode ? 'right-1' : 'left-1'}`}></div>
+                </div>
+              </div>
+              <div className="pt-4 border-t border-gray-100">
+                {user ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-4">
+                      {user.photoURL ? (
+                        <img src={user.photoURL} alt="User" className="w-12 h-12 rounded-full" />
+                      ) : (
+                        <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600"><User size={24}/></div>
+                      )}
+                      <div>
+                        <h4 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{user.displayName}</h4>
+                        <p className="text-xs text-gray-400">{user.email}</p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={handleLogout}
+                      className="w-full flex items-center justify-center space-x-2 p-3 bg-red-50 text-red-600 rounded-2xl hover:bg-red-100 transition-colors"
+                    >
+                      <LogOut size={18} />
+                      <span className="font-bold">Шығу</span>
+                    </button>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={handleGoogleLogin}
+                    className="w-full flex items-center justify-center space-x-2 p-4 bg-emerald-600 text-white rounded-2xl shadow-lg active:scale-95 transition-all"
+                  >
+                    <LogIn size={20} />
+                    <span className="font-bold">Google-мен тіркелу</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'scanner':
+        return (
+          <div className="h-full bg-slate-900 flex flex-col items-center justify-center space-y-6">
+            <div className="w-64 h-64 border-4 border-emerald-500 rounded-[40px] flex items-center justify-center relative overflow-hidden">
+               <div className="absolute top-0 w-full h-1 bg-emerald-400 animate-scan"></div>
+               <QrCode size={100} className="text-white/20" />
+            </div>
+            <button onClick={() => setActiveTab('home')} className="px-6 py-2 bg-white/10 text-white rounded-xl">Артқа</button>
+          </div>
+        );
+
+      default: return null;
+    }
+  };
+
+  return (
+    <div className={`flex flex-col h-screen max-w-md mx-auto shadow-2xl overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-slate-900' : 'bg-gray-50'}`}>
+      <main className="flex-1 overflow-y-auto no-scrollbar">
+        {renderContent()}
+      </main>
+      <nav className={`fixed bottom-0 max-w-md w-full border-t flex justify-around items-center py-4 px-2 z-50 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}>
+        {[
+          { id: 'home', icon: Home, label: 'Басты' },
+          { id: 'book', icon: BookOpen, label: 'Оқулық' },
+          { id: 'ai', icon: MessageSquare, label: 'Ustaz AI' },
+          { id: 'games', icon: Gamepad2, label: 'Ойындар' }
+        ].map((tab) => (
+          <button 
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)} 
+            className={`flex flex-col items-center space-y-1 flex-1 transition-all ${activeTab === tab.id ? 'text-emerald-600 scale-110' : 'text-gray-400'}`}
+          >
+            <tab.icon size={22} />
+            <span className="text-[9px] font-bold uppercase">{tab.label}</span>
+          </button>
+        ))}
+      </nav>
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+        .animate-scan { animation: scan 2s linear infinite; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+      `}} />
+    </div>
+  );
+};
+
+export default App;

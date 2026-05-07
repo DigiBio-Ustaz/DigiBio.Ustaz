@@ -1,4 +1,58 @@
+// Firebase модульдерін қосу
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { 
+  getAuth, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  onAuthStateChanged, 
+  signOut 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+// Скриншоттағы React логикасы
+const { useState, useEffect, useRef } = React;
+
+const App = () => {
+    const [activeTab, setActiveTab] = useState('home');
+    const [user, setUser] = useState(null);
+    const [messages, setMessages] = useState([
+        { role: 'бот', text: 'Сәлеметсіз бе! Мен Ustaz AI көмекшісімін. Биология бойынша қандай сұрақтарыңыз бар?' }
+    ]);
+
+    // Кітаптар тізімі (Скриншоттан алынды)
+    const ушебники = [
+        { grade: "7-сынып", books: [{ name: "Биология (Әлімқұлова)", link: "https://okulyk.kz/biologiya/1039/" }] },
+        { grade: "8-сынып", books: [{ name: "Биология (Короткова)", link: "https://okulyk.kz/biologiya/1069/" }] }
+    ];
+
+    return (
+        <div className="min-h-screen bg-gray-50">
+            <header className="bg-white shadow-sm p-4 flex justify-between items-center">
+                <h1 className="text-xl font-bold text-green-600">DigiBio-Ustaz</h1>
+                <button className="bg-blue-500 text-white px-4 py-2 rounded">Кіру</button>
+            </header>
+
+            <main className="p-6">
+                <h2 className="text-2xl mb-4">Оқу материалдары</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {ушебники.map((item, index) => (
+                        <div key={index} className="p-4 bg-white rounded shadow">
+                            <h3 className="font-bold">{item.grade}</h3>
+                            {item.books.map((book, bIndex) => (
+                                <a key={bIndex} href={book.link} className="text-blue-500 block mt-2">
+                                    {book.name}
+                                </a>
+                            ))}
+                        </div>
+                    ))}
+                </div>
+            </main>
+        </div>
+    );
+};
+
+// Сайтқа шығару
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);import { 
   getAuth, 
   signInWithPopup, 
   GoogleAuthProvider, 
